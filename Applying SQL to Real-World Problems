@@ -1,0 +1,366 @@
+Review the essentials
+
+SELECT title, description
+FROM film AS f
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+SELECT title, description
+FROM film AS f
+INNER JOIN language AS l
+  ON f.language_id = l.language_id
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+SELECT title, description
+FROM film AS f
+INNER JOIN language AS l
+  ON f.language_id = l.language_id
+WHERE name IN ('Italian', 'French')
+  AND release_year = '2005';
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Practice the essentials
+
+SELECT first_name, 
+	   last_name, 
+       amount 
+FROM payment AS p
+INNER JOIN customer AS c
+  ON p.customer_id = c.customer_id
+WHERE active = TRUE
+ORDER BY amount DESC;
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Transform numeric & strings
+
+SELECT LOWER(title) AS title, 
+  rental_rate AS original_rate, 
+  rental_rate * 0.5 AS sale_rate 
+FROM film
+-- Filter for films prior to 2006
+WHERE release_year < 2006;
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Extract what you need
+
+SELECT payment_date,
+  EXTRACT(DAY FROM payment_date) AS payment_day 
+FROM payment;
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+SELECT payment_date,
+  EXTRACT(YEAR FROM payment_date) AS payment_year 
+FROM payment;
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+SELECT payment_date,
+  EXTRACT(HOUR FROM payment_date) AS payment_hour 
+FROM payment;
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Aggregating finances
+
+SELECT active, 
+       COUNT(payment_id) AS num_transactions, 
+       AVG(amount) AS avg_amount, 
+       SUM(amount) AS total_amount
+FROM payment AS p
+INNER JOIN customer AS c
+  ON p.customer_id = c.customer_id
+GROUP BY active;
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Aggregating strings
+
+SELECT name, 
+	STRING_AGG(title, ',') AS film_titles
+FROM film AS f
+INNER JOIN language AS l
+  ON f.language_id = l.language_id
+WHERE release_year = 2010
+  AND rating = 'G'
+GROUP BY name;
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+LIMITing your search
+
+SELECT * 
+FROM payment
+LIMIT 10;
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+SELECT * 
+FROM payment
+ORDER BY amount DESC
+LIMIT 10;
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+What tables are in your database?
+
+SELECT * 
+FROM pg_catalog.pg_tables
+WHERE schemaname = 'public';
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Determine the monthly income
+
+-- List all tables in the public schema
+SELECT * 
+FROM pg_catalog.pg_tables
+WHERE schemaname = 'public';
+
+-- Explore the tables and fill in the correct one
+SELECT * 
+FROM payment 
+LIMIT 10;
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-- List all tables in the public schema
+SELECT * 
+FROM pg_catalog.pg_tables
+WHERE schemaname = 'public';
+
+-- Explore the tables and fill in the correct one
+SELECT * 
+FROM payment 
+LIMIT 10;
+
+-- Prepare the result
+SELECT EXTRACT(MONTH FROM payment_date) AS month, 
+       SUM(amount) AS total_payment
+FROM payment 
+GROUP BY month;
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+What columns are in your database?
+
+-- Select all columns from the information_schema.columns table
+SELECT * 
+FROM information_schema.columns;
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+SELECT table_name, column_name
+FROM information_schema.columns
+WHERE table_schema = 'public';
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+A VIEW of all your columns
+
+SELECT table_name, 
+	   STRING_AGG(column_name, ', ') AS columns
+FROM information_schema.columns
+WHERE table_schema = 'public'
+GROUP BY table_name;
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-- Create a new view called table_columns
+CREATE VIEW table_columns AS
+SELECT table_name, 
+	   STRING_AGG(column_name, ', ') AS columns
+FROM information_schema.columns
+WHERE table_schema = 'public'
+GROUP BY table_name;
+
+-- Query the newly created view table_columns
+SELECT * FROM table_columns;
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+The average length of films by category
+
+-- Calculate the average_length for each category
+SELECT category, 
+	   AVG(length) AS average_length
+FROM film AS f
+-- Join the tables film & category
+INNER JOIN category AS c
+  ON f.film_id = c.film_id
+GROUP BY category
+-- Sort the results in ascending order by length
+ORDER BY average_length;
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Which films are most frequently rented?
+
+SELECT title, COUNT(title) 
+FROM film AS f
+INNER JOIN inventory AS i
+  ON f.film_id = i.film_id
+INNER JOIN rental AS r
+  ON i.inventory_id = r.inventory_id
+GROUP BY title
+ORDER BY count DESC;
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Storing new data
+
+-- Create a new table called oscars
+CREATE TABLE oscars (
+    title VARCHAR,
+    award VARCHAR
+);
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-- Create a new table called oscars
+CREATE TABLE oscars (
+    title VARCHAR,
+    award VARCHAR
+);
+
+-- Insert the data into the oscars table
+INSERT INTO oscars (title, award)
+VALUES
+('TRANSLATION SUMMER', 'Best Film'),
+('DORADO NOTTING', 'Best Film'),
+('MARS ROMAN', 'Best Film'),
+('CUPBOARD SINNERS', 'Best Film'),
+('LONELY ELEPHANT', 'Best Film');
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-- Create a new table called oscars
+CREATE TABLE oscars (
+    title VARCHAR,
+    award VARCHAR
+);
+
+-- Insert the data into the oscars table
+INSERT INTO oscars (title, award)
+VALUES
+('TRANSLATION SUMMER', 'Best Film'),
+('DORADO NOTTING', 'Best Film'),
+('MARS ROMAN', 'Best Film'),
+('CUPBOARD SINNERS', 'Best Film'),
+('LONELY ELEPHANT', 'Best Film');
+
+-- Confirm the table was created and is populated
+SELECT * 
+FROM oscars;
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Using existing data
+
+SELECT *
+FROM film
+WHERE rating IN ('G', 'PG');
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-- Create a new table named family_films using this query
+CREATE TABLE family_films AS
+SELECT *
+FROM film
+WHERE rating IN ('G', 'PG');
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Update the price of rentals
+
+-- Increase rental_rate by 0.5 in the film table
+UPDATE film
+SET rental_rate = rental_rate + 0.5;
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-- Increase rental_rate by one dollar for R-rated movies
+UPDATE film
+SET rental_rate = rental_rate + 1
+WHERE rating = 'R';
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Updated based on other tables
+
+SELECT film_id 
+FROM actor AS a
+INNER JOIN film_actor AS f
+   ON a.actor_id = f.actor_id
+WHERE last_name IN ('WILLIS', 'CHASE', 'WINSLET', 'GUINESS', 'HUDSON');
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+UPDATE film
+SET rental_rate = rental_rate - 1
+WHERE film_id IN
+  (SELECT film_id from actor AS a
+   INNER JOIN film_actor AS f
+      ON a.actor_id = f.actor_id
+   WHERE last_name IN ('WILLIS', 'CHASE', 'WINSLET', 'GUINESS', 'HUDSON'));
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Delete selected records
+
+-- Delete films that cost most than 25 dollars
+DELETE FROM film
+WHERE replacement_cost > 25;
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+A family friendly video store
+
+-- Identify the film_id of all films that have a rating of R or NC-17
+SELECT film_id
+FROM film
+WHERE rating IN ('R', 'NC-17');
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-- Use the list of film_id values to DELETE all R & NC-17 rated films from inventory.
+DELETE FROM inventory
+WHERE film_id IN (
+  SELECT film_id FROM film
+  WHERE rating IN ('R', 'NC-17')
+);
+
+-- Delete records from the `film` table that are either rated as R or NC-17.
+DELETE FROM film
+WHERE rating IN ('R', 'NC-17');
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Fix this query - intent
+
+SELECT r.customer_id, r.rental_date, r.return_date 
+FROM rental r
+JOIN inventory i
+  ON r.inventory_id = i.inventory_id
+JOIN film f
+  ON i.film_id = f.film_id
+WHERE f.length < 90;
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+SELECT r.customer_id, r.rental_date, r.return_date 
+FROM rental AS r
+JOIN inventory AS i
+  ON r.inventory_id = i.inventory_id
+JOIN film AS f
+  ON i.film_id = f.film_id
+WHERE f.length < 90;
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+SELECT r.customer_id, r.rental_date, r.return_date 
+FROM rental AS r
+INNER JOIN inventory AS i
+  ON r.inventory_id = i.inventory_id
+INNER JOIN film AS f
+  ON i.film_id = f.film_id
+WHERE f.length < 90;
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+SELECT r.customer_id, r.rental_date, r.return_date 
+FROM rental AS r
+/* Inventory is used as an intermediate table for 
+uniting the rental and film tables */
+INNER JOIN inventory AS i
+  ON r.inventory_id = i.inventory_id
+INNER JOIN film AS f
+  ON i.film_id = f.film_id
+WHERE f.length < 90;
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Make this query easier to read - Part I
+
+SELECT title, 
+	   rating 
+FROM film 
+WHERE rating IN ('G','PG', 'R');
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Make this query easier to read - Part II
+
+SELECT category AS FILMCATEGORY, 
+	   AVG(length) AS AverageLength
+FROM film AS f
+INNER JOIN category AS c
+  ON f.film_id = c.film_id
+WHERE release_year >= 2005
+  AND release_year <= 2010
+GROUP BY category;
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+SELECT category AS film_category, 
+       AVG(length) AS average_length
+FROM film AS f
+INNER JOIN category AS c
+  ON f.film_id = c.film_id
+WHERE release_year >= 2005
+  AND release_year <= 2010
+GROUP BY category;
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+SELECT category AS film_category, 
+       AVG(length) AS average_length
+FROM film AS f
+INNER JOIN category AS c
+  ON f.film_id = c.film_id
+WHERE release_year BETWEEN 2005 AND 2010
+GROUP BY category;
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Apply best practices to your code
+
+SELECT first_name, last_name, email FROM rental AS r 
+JOIN customer AS c ON r.customer_id = c.customer_id;
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+SELECT first_name, 
+       last_name, 
+       email 
+FROM rental AS r 
+JOIN customer AS c 
+	ON r.customer_id = c.customer_id;
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+SELECT first_name, 
+       last_name, 
+       email 
+FROM rental AS r 
+INNER JOIN customer AS c 
+   ON r.customer_id = c.customer_id;
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
